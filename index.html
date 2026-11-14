@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f9fc" id="theme-color">
+  <meta name="description" content="A searchable, filterable 19-car master list grouped by vehicle style.">
+  <title>Car Master List — My Garage</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --page: #f6f8fb; --surface: #fff; --surface-alt: #f0f4f8;
+      --text: #172433; --muted: #617083; --border: #dce4ec;
+      --accent: #145e84; --accent-soft: #e4f2f8; --focus: #176f9e;
+      --shadow: 0 5px 30px rgba(23, 36, 51, .035);
+      --input: #fff; --chip: #eff4f8; --status: #f4f0e9;
+    }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --page: #0e151e; --surface: #182331; --surface-alt: #1f2d3d;
+      --text: #eef3f8; --muted: #afbed0; --border: #344457;
+      --accent: #96d9f3; --accent-soft: #243e53; --focus: #91d3f3;
+      --shadow: 0 6px 36px rgba(0, 0, 0, .10);
+      --input: #121e2a; --chip: #283849; --status: #3b352e;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--page); color: var(--text); line-height: 1.5; }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+    main { max-width: 1120px; margin: auto; padding: 40px 20px 56px; }
+    .top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 22px; }
+    .eyebrow { color: var(--accent); font-size: .76rem; font-weight: 800; letter-spacing: .17em; text-transform: uppercase; margin: 0 0 10px; }
+    h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.25rem); line-height: 1.1; letter-spacing: -.05em; }
+    .lede { margin: 14px 0 0; max-width: 650px; color: var(--muted); font-size: .99rem; }
+    .theme-control { display: flex; align-items: center; gap: 10px; padding-top: 5px; flex-wrap: wrap; }
+    .theme-control > span { font-weight: 650; font-size: .83rem; color: var(--muted); }
+    .theme-switch { display: flex; align-items: center; border: 1px solid var(--border); border-radius: 11px; background: var(--surface-alt); padding: 4px; gap: 3px; }
+    .theme-switch button { border: 0; border-radius: 7px; color: var(--muted); background: transparent; padding: 7px 15px; font-size: .86rem; font-weight: 700; }
+    .theme-switch button[aria-pressed="true"] { color: var(--text); background: var(--surface); box-shadow: 0 1px 5px #00000017; }
+    .overview { display: flex; gap: 12px; flex-wrap: wrap; margin: 26px 0 24px; }
+    .summary-pill { display: inline-flex; gap: 7px; align-items: baseline; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--muted); padding: 7px 13px; font-size: .82rem; }
+    .summary-pill strong { color: var(--text); font-size: .98rem; }
+    .filters { padding: 22px; background: var(--surface); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow); }
+    .filters-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+    h2 { font-size: 1.1rem; letter-spacing: -.02em; margin: 0; }
+    .reset { background: none; color: var(--accent); border: none; font-weight: 750; font-size: .86rem; padding: 5px; }
+    .reset:disabled { color: var(--muted); opacity: .6; cursor: default; }
+    .filter-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+    .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .field.search { grid-column: 1 / -1; }
+    .field label { font-weight: 700; font-size: .8rem; color: var(--muted); }
+    .field input, .field select { width: 100%; min-height: 43px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--input); color: var(--text); }
+    .field input::placeholder { color: var(--muted); opacity: .85; }
+    .browse-row { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px; padding-top: 18px; margin-top: 18px; border-top: 1px solid var(--border); }
+    .browse-row .field { flex: 1 1 280px; max-width: 380px; }
+    .browse-note { color: var(--muted); font-size: .82rem; margin: 0; max-width: 550px; }
+    .filter-subhead { font-weight: 750; font-size: .77rem; letter-spacing: .055em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+    .group-note { margin: 0 2px 5px; font-size: .83rem; color: var(--muted); }
+    .results-bar { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 25px 2px 11px; }
+    .results-bar .count { font-weight: 750; color: var(--text); font-size: .98rem; }
+    .results-bar .order { color: var(--muted); font-size: .84rem; }
+    .groups { display: grid; gap: 23px; }
+    .category { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; box-shadow: var(--shadow); }
+    .category-head { display: flex; gap: 15px; justify-content: space-between; align-items: center; margin: 0 0 15px; }
+    .category-title { font-size: 1.12rem; margin: 0; letter-spacing: -.02em; }
+    .category-count { padding: 4px 10px; border-radius: 999px; background: var(--surface-alt); color: var(--muted); white-space: nowrap; font-size: .78rem; font-weight: 700; }
+    .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; }
+    .car { border: 1px solid var(--border); border-radius: 12px; padding: 15px; min-width: 0; background: var(--surface); }
+    .car-top { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+    .year { color: var(--accent); font-size: .88rem; font-weight: 800; }
+    .brand { color: var(--muted); font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+    .car h4 { font-size: 1rem; line-height: 1.35; letter-spacing: -.017em; margin: 7px 0 7px; }
+    .car .detail { margin: 0 0 12px; color: var(--muted); font-size: .85rem; line-height: 1.43; }
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tag { padding: 4px 9px; border-radius: 6px; background: var(--chip); color: var(--muted); font-size: .72rem; font-weight: 700; }
+    .tag.status { background: var(--status); color: var(--text); }
+    .empty { border: 1px dashed var(--border); border-radius: 16px; padding: 38px 20px; text-align: center; background: var(--surface); }
+    .empty h3 { margin: 0 0 4px; }
+    .empty p { margin: 0; color: var(--muted); }
+    .foot { margin-top: 26px; border-top: 1px solid var(--border); padding-top: 15px; font-size: .83rem; color: var(--muted); }
+    @media (max-width: 850px) { .filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 620px) {
+      main { padding: 26px 14px 38px; }
+      .filters { padding: 16px; }
+      .filter-grid { grid-template-columns: 1fr; gap: 12px; }
+      .cards { grid-template-columns: 1fr; }
+      .category { padding: 16px; }
+      .overview { gap: 8px; }
+    }
+    @media (prefers-reduced-motion: no-preference) { body { transition: color .18s ease, background-color .18s ease; } }
+  </style>
+</head>
+<body>
+<main>
+  <header class="top">
+    <div>
+      <p class="eyebrow">My Garage · Collection</p>
+      <h1>Car Master List</h1>
+      <p class="lede">19 cars from our conversation, organized by vehicle style by default. Switch to decade, manufacturer, body style, or interest status without losing your filters.</p>
+    </div>
+    <div class="theme-control">
+      <span>Theme</span>
+      <div class="theme-switch" role="group" aria-label="Choose color theme">
+        <button type="button" id="light-btn" aria-pressed="true">Light</button>
+        <button type="button" id="dark-btn" aria-pressed="false">Dark</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="overview" aria-label="Collection summary">
+    <span class="summary-pill"><strong>19</strong> vehicles</span>
+    <span class="summary-pill"><strong>8</strong> vehicle styles</span>
+    <span class="summary-pill"><strong>1962–present</strong> year span</span>
+  </div>
+
+  <section class="filters" aria-labelledby="filters-title">
+    <div class="filters-top">
+      <h2 id="filters-title">Explore the collection</h2>
+      <button class="reset" type="button" id="reset" disabled>Clear filters</button>
+    </div>
+    <p class="filter-subhead">Refine the list</p>
+    <div class="filter-grid">
+      <div class="field search">
+        <label for="search">Search</label>
+        <input type="search" id="search" placeholder="Search a year, make, model, or detail…" autocomplete="off">
+      </div>
+      <div class="field"><label for="decade">Decade</label><select id="decade"><option value="">All decades</option></select></div>
+      <div class="field"><label for="body">Body style</label><select id="body"><option value="">All body styles</option></select></div>
+      <div class="field"><label for="status">Status</label><select id="status"><option value="">All statuses</option></select></div>
+      <div class="field"><label for="brand">Brand / manufacturer</label><select id="brand"><option value="">All brands</option></select></div>
+    </div>
+    <div class="browse-row">
+      <div class="field">
+        <label for="group-by">Organize / group by</label>
+        <select id="group-by">
+          <option value="style">Vehicle style (default)</option>
+          <option value="decade">Decade</option>
+          <option value="brand">Brand / manufacturer</option>
+          <option value="body">Body style</option>
+          <option value="status">Personal interest / status</option>
+        </select>
+      </div>
+      <p class="browse-note">Filters work in every view. Some cars can appear in more than one decade, body-style, or interest group, but the total always counts unique cars.</p>
+    </div>
+  </section>
+
+  <div class="results-bar">
+    <div class="count" id="count" role="status" aria-live="polite">Showing 19 of 19 cars</div>
+    <div class="order" id="order">Grouped by vehicle style · Oldest first in each group</div>
+  </div>
+  <p class="group-note" id="group-note"></p>
+  <div id="groups" class="groups"></div>
+  <div id="empty" class="empty" hidden>
+    <h3>No matching cars</h3>
+    <p>Try removing a filter or broadening your search.</p>
+  </div>
+  <footer class="foot">Statuses describe how each model came up in our conversation, not whether you own it. A car may appear in multiple groups or match multiple filters. Light mode is the default; your chosen light/dark theme is saved on this device.</footer>
+</main>
+<script>
+  'use strict';
+
+  // All entries retain the year ranges and model names from the previous master list.
+  const cars = [
+    { year:'1962–64', start:1962, end:1964, brand:'Chevrolet', name:'Corvair Monza Convertible — 1st generation', category:'Classic Cruisers & Lowriders', bodies:['Convertible / roadster'], statuses:['Selected','Photographed'], note:'First-generation custom/lowrider reference.' },
+    { year:'1965–69', start:1965, end:1969, brand:'Chevrolet', name:'Corvair Monza/Corsa Coupe — 2nd generation', category:'Classic Cruisers & Lowriders', bodies:['Coupe / fastback'], statuses:['Selected','Photographed'], note:'Second-generation coupe.' },
+    { year:'1965–69', start:1965, end:1969, brand:'Chevrolet', name:'Corvair Monza/Corsa Convertible — 2nd generation', category:'Classic Cruisers & Lowriders', bodies:['Convertible / roadster'], statuses:['Selected','Photographed'], note:'Second-generation convertible.' },
+    { year:'1965–73', start:1965, end:1973, brand:'Porsche', name:'911 / 912 — including Targa', category:'Classic Sports Cars', bodies:['Coupe / fastback','Targa'], statuses:['Selected'], note:'Retained from the red-car identification shortlist.' },
+    { year:'1966–69', start:1966, end:1969, brand:'Alfa Romeo', name:'Spider / Duetto', category:'Classic Sports Cars', bodies:['Convertible / roadster'], statuses:['Selected'], note:'Retained from the red-car identification shortlist.' },
+    { year:'1967–69', start:1967, end:1969, brand:'Chevrolet', name:'Camaro — 1st generation', category:'American Muscle', bodies:['Coupe / fastback','Convertible / roadster'], statuses:['Comparison'], note:'Discussed as a Batmobile styling comparison.' },
+    { year:'1968–70', start:1968, end:1970, brand:'Dodge', name:'Charger', category:'American Muscle', bodies:['Coupe / fastback'], statuses:['Comparison'], note:'Discussed as a Batmobile styling comparison.' },
+    { year:'1969–70', start:1969, end:1970, brand:'Chevrolet', name:'Corvette C3 Stingray', category:'Classic Sports Cars', bodies:['Coupe / fastback','Convertible / roadster'], statuses:['Dream car / favorite'], note:'One of your stated all-time dream cars.' },
+    { year:'1969–70', start:1969, end:1970, brand:'Ford', name:'Mustang SportsRoof / Mach 1', category:'American Muscle', bodies:['Coupe / fastback'], statuses:['Dream car / favorite'], note:'One of your favorite classic body styles.' },
+    { year:'1970', start:1970, end:1970, brand:'Plymouth', name:'Barracuda / ’Cuda', category:'American Muscle', bodies:['Coupe / fastback'], statuses:['Comparison'], note:'Discussed alongside the 2022 Batmobile.' },
+    { year:'1970–76', start:1970, end:1976, brand:'Porsche', name:'914', category:'Classic Sports Cars', bodies:['Targa'], statuses:['Comparison'], note:'Considered while identifying the red classic.' },
+    { year:'1983–91', start:1983, end:1991, brand:'Porsche', name:'944', category:'Classic Sports Cars', bodies:['Coupe / fastback'], statuses:['Photographed'], note:'Front-engine, transaxle sports coupe.' },
+    { year:'1986–95', start:1986, end:1995, brand:'Suzuki', name:'Samurai', category:'SUVs & Off-Road', bodies:['SUV / 4×4'], statuses:['Photographed'], note:'Compact traditional off-roader.' },
+    { year:'1997–present', start:1997, end:2026, brand:'Honda', name:'CR-V', category:'SUVs & Off-Road', bodies:['SUV / 4×4'], statuses:['Selected'], note:'Generation not yet specified.' },
+    { year:'2014–19', start:2014, end:2019, brand:'Chevrolet', name:'Corvette C7', category:'Modern Performance', bodies:['Coupe / fastback','Convertible / roadster'], statuses:['Photographed'], note:'A heavily modified black example appeared in your photos.' },
+    { year:'2017–21', start:2017, end:2021, brand:'Honda', name:'Civic Hatchback — 10th generation', category:'Compact Hatchbacks', bodies:['Hatchback'], statuses:['Photographed'], note:'White customized hatchback from your photos.' },
+    { year:'2019–25', start:2019, end:2025, brand:'Toyota', name:'Corolla Hatchback — E210', category:'Compact Hatchbacks', bodies:['Hatchback'], statuses:['Photographed'], note:'Red hatchback from your photos.' },
+    { year:'2022', start:2022, end:2022, brand:'Custom / Film', name:'The Batman Batmobile', category:'Custom & Movie Cars', bodies:['Custom'], statuses:['Movie design'], note:'Purpose-built film vehicle, not a production model.' },
+    { year:'2023–present', start:2023, end:2026, brand:'Honda', name:'Accord — 11th generation', category:'Sedans', bodies:['Sedan'], statuses:['Photographed'], note:'White examples from your photos.' }
+  ];
+  const categories = [
+    'Classic Cruisers & Lowriders',
+    'Classic Sports Cars',
+    'American Muscle',
+    'Modern Performance',
+    'Compact Hatchbacks',
+    'Sedans',
+    'SUVs & Off-Road',
+    'Custom & Movie Cars'
+  ];
+  const $ = id => document.getElementById(id);
+  const root = document.documentElement;
+  const themeColor = $('theme-color');
+  const lightButton = $('light-btn');
+  const darkButton = $('dark-btn');
+
+  function setTheme(theme, persist=false) {
+    const selected = theme === 'dark' ? 'dark' : 'light';
+    root.dataset.theme = selected;
+    lightButton.setAttribute('aria-pressed', String(selected === 'light'));
+    darkButton.setAttribute('aria-pressed', String(selected === 'dark'));
+    themeColor.content = selected === 'dark' ? '#0e151e' : '#f6f8fb';
+    if (persist) { try { localStorage.setItem('car-master-theme', selected); } catch (_) {} }
+  }
+  let initialTheme = 'light';
+  try { initialTheme = localStorage.getItem('car-master-theme') || 'light'; } catch (_) {}
+  setTheme(initialTheme);
+  lightButton.addEventListener('click', () => setTheme('light', true));
+  darkButton.addEventListener('click', () => setTheme('dark', true));
+
+  const decades = [...new Set(cars.flatMap(car => {
+    const values = [];
+    for (let y = Math.floor(car.start / 10) * 10; y <= car.end; y += 10) values.push(y + 's');
+    return values;
+  }))].sort();
+  const bodies = [...new Set(cars.flatMap(car => car.bodies))].sort();
+  const statuses = ['Dream car / favorite','Selected','Photographed','Comparison','Movie design'];
+  const brands = [...new Set(cars.map(car => car.brand))].sort();
+  function populate(id, options) {
+    const select = $(id);
+    for (const value of options) {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = value;
+      select.append(option);
+    }
+  }
+  populate('decade', decades);
+  populate('body', bodies);
+  populate('status', statuses);
+  populate('brand', brands);
+
+  const fields = ['search','decade','body','status','brand'];
+  function tag(text, kind='') {
+    const element = document.createElement('span');
+    element.className = 'tag' + (kind ? ' ' + kind : '');
+    element.textContent = text;
+    return element;
+  }
+  function makeCar(car) {
+    const article = document.createElement('article');
+    article.className = 'car';
+    const top = document.createElement('div'); top.className = 'car-top';
+    const year = document.createElement('span'); year.className = 'year'; year.textContent = car.year;
+    const brand = document.createElement('span'); brand.className = 'brand'; brand.textContent = car.brand;
+    top.append(year, brand);
+    const heading = document.createElement('h4'); heading.textContent = car.name;
+    const detail = document.createElement('p'); detail.className = 'detail'; detail.textContent = car.note;
+    const tags = document.createElement('div'); tags.className = 'tags';
+    for (const body of car.bodies) tags.append(tag(body));
+    for (const status of car.statuses) tags.append(tag(status, 'status'));
+    article.append(top, heading, detail, tags);
+    return article;
+  }
+  function matches(car, state) {
+    const haystack = [car.year, car.brand, car.name, car.note, car.category, ...car.bodies, ...car.statuses].join(' ').toLocaleLowerCase();
+    if (state.search && !haystack.includes(state.search)) return false;
+    if (state.decade) {
+      const decade = parseInt(state.decade, 10);
+      if (!(car.start <= decade + 9 && car.end >= decade)) return false;
+    }
+    if (state.body && !car.bodies.includes(state.body)) return false;
+    if (state.status && !car.statuses.includes(state.status)) return false;
+    if (state.brand && car.brand !== state.brand) return false;
+    return true;
+  }
+  // Secondary organization views are available without changing the primary
+  // vehicle-style classification. Each view supports all four filters + search.
+  const groupViews = {
+    style: { label:'vehicle style', items:categories, belongs:(car, label) => car.category === label },
+    decade: { label:'decade', items:decades, belongs:(car, label) => {
+      const decade = parseInt(label, 10);
+      return car.start <= decade + 9 && car.end >= decade;
+    } },
+    brand: { label:'manufacturer', items:brands, belongs:(car, label) => car.brand === label },
+    body: { label:'body style', items:bodies, belongs:(car, label) => car.bodies.includes(label) },
+    status: { label:'personal interest / status', items:statuses, belongs:(car, label) => car.statuses.includes(label) }
+  };
+
+  function render() {
+    const state = Object.fromEntries(fields.map(id => [id, $(id).value.trim()]));
+    state.search = state.search.toLocaleLowerCase();
+    const filtered = cars.filter(car => matches(car, state));
+    const view = groupViews[$('group-by').value] || groupViews.style;
+    const container = $('groups');
+    container.replaceChildren();
+    let displayedCards = 0;
+    for (const label of view.items) {
+      const list = filtered.filter(car => view.belongs(car, label))
+        .sort((a,b) => a.start - b.start || a.name.localeCompare(b.name));
+      if (!list.length) continue;
+      displayedCards += list.length;
+      const section = document.createElement('section'); section.className = 'category';
+      const head = document.createElement('div'); head.className = 'category-head';
+      const title = document.createElement('h2'); title.className = 'category-title'; title.textContent = label;
+      const count = document.createElement('span'); count.className = 'category-count'; count.textContent = list.length + (list.length === 1 ? ' car' : ' cars');
+      head.append(title, count);
+      const cards = document.createElement('div'); cards.className = 'cards';
+      for (const car of list) cards.append(makeCar(car));
+      section.append(head, cards); container.append(section);
+    }
+    $('count').textContent = `Showing ${filtered.length} of ${cars.length} unique cars in ${container.children.length} ${container.children.length === 1 ? 'group' : 'groups'}`;
+    $('order').textContent = `Grouped by ${view.label} · Oldest first in each group`;
+    $('group-note').textContent = displayedCards > filtered.length
+      ? `Some cars appear in more than one group (${displayedCards} displayed cards for ${filtered.length} unique cars).`
+      : '';
+    $('group-note').hidden = displayedCards === filtered.length;
+    $('empty').hidden = filtered.length !== 0;
+    $('reset').disabled = fields.every(id => !$(id).value);
+  }
+  for (const id of fields) $(id).addEventListener(id === 'search' ? 'input' : 'change', render);
+  $('group-by').addEventListener('change', render);
+  $('reset').addEventListener('click', () => {
+    for (const id of fields) $(id).value = '';
+    render();
+    $('search').focus();
+  });
+  render();
+</script>
+</body>
+</html>
